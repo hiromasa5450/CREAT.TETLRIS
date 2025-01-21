@@ -35,11 +35,19 @@ function createPiece() {
 
 function rotate(piece) {
     const newShape = piece.shape[0].map((_, i) => piece.shape.map(row => row[i]).reverse());
-    const oldX = piece.x;
+    const oldShape = piece.shape;
     piece.shape = newShape;
     if (collide()) {
-        piece.x = oldX;
-        piece.shape = newShape.map(row => row.reverse()); // 回転を元に戻す
+        piece.shape = oldShape; // 回転前の形に戻す
+    }
+}
+
+function rotateLeft(piece) {
+    const newShape = piece.shape.reverse().map((_, i) => piece.shape.map(row => row[i]).reverse());
+    const oldShape = piece.shape;
+    piece.shape = newShape;
+    if (collide()) {
+        piece.shape = oldShape; // 回転前の形に戻す
     }
 }
 
@@ -78,7 +86,10 @@ function collide() {
         return row.some((cell, dx) => {
             let x = currentPiece.x + dx;
             let y = currentPiece.y + dy;
-            return cell && (y >= ROWS || board[y]?.[x]);
+            if (x < 0 || x >= COLUMNS || y >= ROWS) {
+                return cell; // 横か縦が範囲外
+            }
+            return cell && board[y]?.[x]; // 他のブロックとの衝突
         });
     });
 }
@@ -139,27 +150,49 @@ function hardDrop() {
     drawPiece();
 }
 
-document.addEventListener("keydown", (event) => {
-    if (event.key === "ArrowLeft") {
-        currentPiece.x--;
-        if (collide()) currentPiece.x++;
-    } else if (event.key === "ArrowRight") {
-        currentPiece.x++;
-        if (collide()) currentPiece.x--;
-    } else if (event.key === "ArrowDown") {
-        currentPiece.y++;
-        if (collide()) currentPiece.y--;
-    } else if (event.key === " ") {
-        hardDrop(); // スペースキーでハードドロップ
-    } else if (event.key === "ArrowUp") {
-        rotate(currentPiece); // 上矢印で回転
-    } else if (event.key === "p") {
-        isPaused = !isPaused;
-        if (!isPaused) {
-            dropPiece();
-        }
-    }
+// ボタン操作
+document.getElementById("left").addEventListener("click", () => {
+    currentPiece.x--;
+    if (collide()) currentPiece.x++; // 横壁にぶつかったら戻す
+    drawBoard();
+    drawPiece();
 });
 
-dropPiece();
+document.getElementById("right").addEventListener("click", () => {
+    currentPiece.x++;
+    if (collide()) currentPiece.x--; // 横壁にぶつかったら戻す
+    drawBoard();
+    drawPiece();
+});
 
+document.getElementById("down").addEventListener("click", () => {
+    currentPiece.y++;
+    if (collide()) currentPiece.y--; // 下にぶつかったら戻す
+    drawBoard();
+    drawPiece();
+});
+
+document.getElementById("rotate").addEventListener("click", () => {
+    rotate(currentPiece); // 右回転
+    drawBoard();
+    drawPiece();
+});
+
+document.getElementById("L").addEventListener("click", () => {
+    rotateLeft(currentPiece); // 左回転 (L)
+    drawBoard();
+    drawPiece();
+});
+
+document.getElementById("R").addEventListener("click", () => {
+    rotate(currentPiece); // 右回転 (R)
+    drawBoard();
+    drawPiece();
+});
+
+document.getElementById("hardDrop").addEventListener("click", () => {
+    hardDrop();
+});
+
+// ゲーム開始
+dropPiece();
